@@ -6,7 +6,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import urljoin
 from utils import parse_volume_string, parse_count_string
 
-# ===================== FUNCIONES AUXILIARES =====================
 def safe_get_text(element):
     return element.get_text(strip=True) if element else None
 
@@ -29,10 +28,6 @@ def log(msg):
 
 
 def extract_details_from_product_page(soup, search_mode='volume'):
-    """
-    Extrae detalles de la página, decidiendo si buscar volumen o conteo
-    basado en el search_mode.
-    """
     details = {
         'Product': 'Not found',
         'Price_SAR': '0.00',
@@ -42,7 +37,6 @@ def extract_details_from_product_page(soup, search_mode='volume'):
         'Validation_Status': 'Not Found'
     }
 
-    # Extracción básica
     details['Product'] = safe_get_text(soup.find('span', id='productTitle')) or details['Product']
     brand_row = soup.find('tr', class_='po-brand')
     details['Company'] = safe_get_text(brand_row.find('span', class_='po-break-word')) if brand_row else details['Company']
@@ -55,7 +49,6 @@ def extract_details_from_product_page(soup, search_mode='volume'):
         details['Price_SAR'] = price_str
 
     raw_title = details.get('Product')
-    # Extraer volumen, item_volume, peso
     tech_fields = extract_from_table(soup, 'productDetails_techSpec_section_1', ['volume', 'weight'])
     raw_volume = tech_fields['volume']
     raw_weight = tech_fields['weight']
@@ -64,7 +57,6 @@ def extract_details_from_product_page(soup, search_mode='volume'):
 
     log(f"     [Debug] -> Title: '{raw_title is not None}', title: {raw_title}, Vol: '{raw_volume}', ItemVol: '{raw_item_volume}', Weight: '{raw_weight}'")
 
-    # --- LÓGICA HÍBRIDA: Decide qué parser usar ---
     p_title = p_volume = p_item_volume = p_weight = None
     if search_mode == 'units':
         log("     [Validator] Search mode: units")
@@ -79,14 +71,12 @@ def extract_details_from_product_page(soup, search_mode='volume'):
     final_data = None
     validation_status = 'Not Found'
 
-    # --- Validación de volúmenes ---
     volume_fields = [p_title, p_volume, p_item_volume, p_weight]
     volume_values = [v for v in volume_fields if v is not None]
     if search_mode != 'units' and len(volume_values) < 2:
         log("     [Validator] ❌ Not enough volume values found.")
         return details
 
-    # Verificación cruzada
     if search_mode != 'units':
         for i, vi in enumerate(volume_fields):
             if vi is None:
@@ -109,7 +99,6 @@ def extract_details_from_product_page(soup, search_mode='volume'):
             final_data = p_title
             validation_status = 'From Title'
 
-    # --- Asignación final ---
     if final_data:
         details['Total quantity'] = final_data['quantity']
         details['Unit of measurement'] = final_data['unit']
@@ -119,12 +108,6 @@ def extract_details_from_product_page(soup, search_mode='volume'):
         log(f"     [Validator] ❌ No valid data found for mode '{search_mode}'.")
 
     return details
-
-
-# ==============================================================================
-# 3. FUNCIÓN PRINCIPAL DEL SCRAPER DE AMAZON
-# ==============================================================================
-
 
 def scrape_amazon(keyword, driver, search_mode):
     log(f"  Searching '{keyword}'")
