@@ -6,6 +6,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 from scrapers.amazon_scraper import scrape_amazon
+from scrapers.mumzworld_scraper import scrape_mumzworld
 
 service = Service(ChromeDriverManager().install())
 options = webdriver.ChromeOptions()
@@ -15,11 +16,24 @@ options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 options.add_argument('--log-level=3') 
 driver = webdriver.Chrome(service=service, options=options)
 
-TARGET_MAP = { 'Home': ['amazon'], 'Automotive': ['amazon'], 'Pets': ['amazon'], }
-SCRAPER_FUNCTIONS = { 'amazon': scrape_amazon, }
+TARGET_MAP = { 'Home': ['amazon', 'mumzworld'], 'Automotive': ['amazon'], 'Pets': ['amazon'], }
+SCRAPER_FUNCTIONS = { 'amazon': scrape_amazon, 'mumzworld': scrape_mumzworld }
+
+# Lista de productos que no se buscarán en Mumzworld
+MUMZWORLD_EXCLUSIONS = [
+    'oven and grill cleaner',
+    'shower and tub cleaner',
+    'mold and mildew remover',
+    'general sanitizer for vegetable and salad washing',
+    'tile and laminate cleaner',
+    'wax and floor polish',
+    'carpet shampoo',
+    'spot remover for carpets',
+    'leather cleaner'
+]
 
 try:
-    df_instructions = pd.read_csv('analysis.csv')
+    df_instructions = pd.read_csv('analysis - copia.csv')
     df_instructions = df_instructions.dropna(subset=['Type of product', 'Sub industry'])
 except FileNotFoundError:
     print("Error: El archivo CSV de instrucciones 'analysis.csv' no fue encontrado.")
@@ -56,7 +70,11 @@ for index, row in df_instructions.iterrows():
         search_mode = 'units'
 
     print(f"\n>> Searching '{search_keyword}' for '{sub_industry}' (Mode: {search_mode})")
-    sites_to_scrape = TARGET_MAP.get(sub_industry, [])
+    sites_to_scrape = TARGET_MAP.get(sub_industry, []).copy()
+    
+    if base_keyword in MUMZWORLD_EXCLUSIONS and 'mumzworld' in sites_to_scrape:
+        print(f"   -> Excluding mumzworld for '{base_keyword}'")
+        sites_to_scrape.remove('mumzworld')
     
     for site_name in sites_to_scrape:
         if site_name in SCRAPER_FUNCTIONS:
@@ -77,7 +95,8 @@ for index, row in df_instructions.iterrows():
                 with open(output_csv_file, 'a', newline='', encoding='utf-8') as f:
                     writer = csv.DictWriter(f, fieldnames=csv_columns)
                     writer.writerow(row_data)
-                print(f"Saved: {product.get('Product')[:60]}...")
+                print(f"    -> Saved: {product.get('Product')[:60]}... (Source: {site_name})")
         else:
-            print(f"No web scraper for that site")
+            print(f"  No scraper for site '{site_name}'")
+
 driver.quit()
