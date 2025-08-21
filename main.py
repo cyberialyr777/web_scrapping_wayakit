@@ -4,99 +4,112 @@ import csv
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from scrapers.amazon_scraper import AmazonScraper
+from scrapers.mumzworld_scraper import MumzworldScraper
 
-from scrapers.amazon_scraper import scrape_amazon
-from scrapers.mumzworld_scraper import scrape_mumzworld
+import config
 
-service = Service(ChromeDriverManager().install())
-options = webdriver.ChromeOptions()
-options.add_argument('--headless')
-options.add_argument('--disable-gpu')
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36")
-options.add_argument('--log-level=3') 
-driver = webdriver.Chrome(service=service, options=options)
+def main():
+    print("--- INICIANDO PROCESO DE SCRAPING ---")
 
-TARGET_MAP = { 'Home': ['amazon', 'mumzworld'], 'Automotive': ['amazon'], 'Pets': ['amazon'], }
-SCRAPER_FUNCTIONS = { 'amazon': scrape_amazon, 'mumzworld': scrape_mumzworld }
+    print("1. Configurando el navegador...")
+    service = Service(ChromeDriverManager().install())
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
+    options.add_argument(f"user-agent={config.USER_AGENT}")
+    options.add_argument('--log-level=3')
 
-# Lista de productos que no se buscarán en Mumzworld
-MUMZWORLD_EXCLUSIONS = [
-    'oven and grill cleaner',
-    'shower and tub cleaner',
-    'mold and mildew remover',
-    'general sanitizer for vegetable and salad washing',
-    'tile and laminate cleaner',
-    'wax and floor polish',
-    'carpet shampoo',
-    'spot remover for carpets',
-    'leather cleaner'
-]
-
-try:
-    df_instructions = pd.read_csv('analysis - copia.csv')
-    df_instructions = df_instructions.dropna(subset=['Type of product', 'Sub industry'])
-except FileNotFoundError:
-    print("Error: El archivo CSV de instrucciones 'analysis.csv' no fue encontrado.")
-    driver.quit()
-    exit()
-
-output_csv_file = 'resultados_finales_clasificados_v6.csv'
-csv_columns = ['date', 'industry', 'subindustry', 'type_of_product', 'generic_product_type', 
-               'product', 'price_sar', 'company', 'source', 'url',
-               'unit_of_measurement', 'total_quantity']
-with open(output_csv_file, 'w', newline='', encoding='utf-8') as f:
-    writer = csv.DictWriter(f, fieldnames=csv_columns)
-    writer.writeheader()
-
-for index, row in df_instructions.iterrows():
-    industry = row['Industry']
-    sub_industry = row['Sub industry']
-    original_type_of_product = str(row['Type of product']).lower()
-    generic_type_of_product = str(row['Generic product type'])
-    search_modifier = str(row['Search Modifiers'])
     try:
-        base_keyword = original_type_of_product.split('-', 1)[1].strip()
-    except IndexError:
-        base_keyword = original_type_of_product.strip()
+        driver = webdriver.Chrome(service=service, options=options)
+    except Exception as e:
+        print(f"Error al iniciar el driver de Chrome: {e}")
+        return
 
-    if search_modifier and not pd.isna(row.get('Search Modifiers')):
-        search_keyword = f"{base_keyword} {search_modifier}"
+    print(f"2. Leyendo instrucciones desde '{config.INSTRUCTIONS_FILE}'...")
+    try:
+        df_instructions = pd.read_csv(config.INSTRUCTIONS_FILE)
+        df_instructions = df_instructions.dropna(subset=['Type of product', 'Sub industry'])
+    except FileNotFoundError:
+        print(f"  -> Error: El archivo de instrucciones '{config.INSTRUCTIONS_FILE}' no fue encontrado.")
+        driver.quit()
+        return
+
+    scrapers = {
+        'amazon': AmazonScraper(driver),
+        'mumzworld': MumzworldScraper(driver)
+    }
+    
+    all_found_products = []
+
+    print("\n--- 4. COMENZANDO BÚSQUEDA DE PRODUCTOS ---")
+    # --- 4. Bucle Principal de Scraping ---
+    for index, row in df_instructions.iterrows():
+        industry = row['Industry']
+        sub_industry = row['Sub industry']
+        original_type_of_product = str(row['Type of product']).lower()
+        generic_type_of_product = str(row['Generic product type'])
+        search_modifier = str(row['Search Modifiers'])
+        
+        try:
+            base_keyword = original_type_of_product.split('-', 1)[1].strip()
+        except IndexError:
+            base_keyword = original_type_of_product.strip()
+
+        search_keyword = f"{base_keyword} {search_modifier}" if search_modifier and not pd.isna(row.get('Search Modifiers')) else base_keyword
+        
+        search_mode = 'units' if any(keyword in original_type_of_product for keyword in ['wipes', 'rags', 'microfiber', 'brush']) else 'volume'
+
+        print(f"\n>> Buscando '{search_keyword}' para '{sub_industry}' (Modo: {search_mode})")
+        
+        sites_to_scrape = config.TARGET_MAP.get(sub_industry, []).copy()
+        
+        if base_keyword in config.MUMZWORLD_EXCLUSIONS and 'mumzworld' in sites_to_scrape:
+            print(f"   -> Excluyendo 'mumzworld' para '{base_keyword}' según las reglas.")
+            sites_to_scrape.remove('mumzworld')
+
+        for site_name in sites_to_scrape:
+            scraper = scrapers.get(site_name)
+            if scraper:
+                found_products = scraper.scrape(search_keyword, search_mode)
+                
+                for product in found_products:
+                    row_data = {
+                        'date': time.strftime("%Y-%m-%d"),
+                        'industry': industry,
+                        'subindustry': sub_industry,
+                        'type_of_product': original_type_of_product,
+                        'generic_product_type': generic_type_of_product,
+                        'product': product.get('Product'),
+                        'price_sar': product.get('Price_SAR'),
+                        'company': product.get('Company'),
+                        'source': site_name,
+                        'url': product.get('URL'),
+                        'unit_of_measurement': product.get('Unit of measurement'),
+                        'total_quantity': product.get('Total quantity')
+                    }
+                    all_found_products.append(row_data)
+                    print(f"    -> RECOLECTADO: {product.get('Product', 'N/A')[:60]}... (Fuente: {site_name})")
+            else:
+                print(f"   -> Advertencia: No se encontró un scraper para el sitio '{site_name}'.")
+
+    if all_found_products:
+        print(f"\n--- 5. GUARDANDO {len(all_found_products)} PRODUCTOS ENCONTRADOS ---")
+        try:
+            with open(config.OUTPUT_CSV_FILE, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=config.CSV_COLUMNS)
+                writer.writeheader()
+                writer.writerows(all_found_products)
+            print(f"  -> ¡Éxito! Datos guardados en '{config.OUTPUT_CSV_FILE}'.")
+        except IOError as e:
+            print(f"  -> Error al escribir en el archivo CSV: {e}")
     else:
-        search_keyword = base_keyword
+        print("\n--- 5. No se encontraron productos para guardar. ---")
 
-    search_mode = 'volume'
-    units_keywords = ['wipes', 'rags', 'microfiber', 'brush']
-    if any(keyword in original_type_of_product for keyword in units_keywords):
-        search_mode = 'units'
+    # --- 6. Cierre Limpio del Navegador ---
+    print("\n6. Cerrando el navegador.")
+    driver.quit()
+    print("\n--- PROCESO COMPLETADO ---")
 
-    print(f"\n>> Searching '{search_keyword}' for '{sub_industry}' (Mode: {search_mode})")
-    sites_to_scrape = TARGET_MAP.get(sub_industry, []).copy()
-    
-    if base_keyword in MUMZWORLD_EXCLUSIONS and 'mumzworld' in sites_to_scrape:
-        print(f"   -> Excluding mumzworld for '{base_keyword}'")
-        sites_to_scrape.remove('mumzworld')
-    
-    for site_name in sites_to_scrape:
-        if site_name in SCRAPER_FUNCTIONS:
-            scraper_function = SCRAPER_FUNCTIONS[site_name]
-            found_products = scraper_function(search_keyword, driver, search_mode)
-            
-            for product in found_products:
-                row_data = {
-                    'date': time.strftime("%Y-%m-%d"),
-                    'industry': industry, 'subindustry': sub_industry,
-                    'type_of_product': original_type_of_product,
-                    'generic_product_type': generic_type_of_product,
-                    'product': product.get('Product'), 'price_sar': product.get('Price_SAR'),
-                    'company': product.get('Company'), 'source': site_name, 'url': product.get('URL'),
-                    'unit_of_measurement': product.get('Unit of measurement'),
-                    'total_quantity': product.get('Total quantity')
-                }
-                with open(output_csv_file, 'a', newline='', encoding='utf-8') as f:
-                    writer = csv.DictWriter(f, fieldnames=csv_columns)
-                    writer.writerow(row_data)
-                print(f"    -> Saved: {product.get('Product')[:60]}... (Source: {site_name})")
-        else:
-            print(f"  No scraper for site '{site_name}'")
-
-driver.quit()
+if __name__ == "__main__":
+    main()
