@@ -1,9 +1,5 @@
 import time
-import os
-from dotenv import load_dotenv
 import re
-import json
-import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -11,18 +7,31 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, quote
 from utils import parse_volume_string, parse_count_string
 
+# Ya no se importan 'os', 'json', 'requests', 'dotenv' aquí.
+# Esas dependencias ahora viven en 'services/ai_service.py'.
+
 class MumzworldScraper:
-    def __init__(self, driver):
+    def __init__(self, driver, relevance_agent):
+        """
+        Inicializa el scraper con una instancia del driver y el agente de relevancia.
+        """
         self.driver = driver
+        self.relevance_agent = relevance_agent  # Inyectamos el servicio de IA
         self.base_url = "https://www.mumzworld.com/sa-en/"
 
     def _log(self, msg):
+        """Imprime un mensaje de log en la consola."""
         print(msg)
 
     def _safe_get_text(self, element):
+        """Extrae texto de un elemento BeautifulSoup de forma segura."""
         return element.get_text(strip=True) if element else None
 
     def _parse_mumzworld_count_string(self, text_string):
+        """
+        Función de utilidad específica para extraer conteos de unidades del título
+        en Mumzworld.
+        """
         if not text_string:
             return None
         match = re.search(r'(\d+)\s*(wipes|count|sheets|sachets|pack|pcs|pieces|pc|s)\b', text_string, re.I)
@@ -31,69 +40,14 @@ class MumzworldScraper:
         quantity = int(match.group(1))
         return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
 
-    def _is_product_relevant_gemini(self, product_name, search_query):
-        prompt = f"""
-        You are an expert shopping assistant. Your task is to determine if a product title is a relevant match for a user's search query.
-        You must follow these rules:
-        1.  If the user's query is for a liquid or spray cleaner (e.g., "glass cleaner", "all purpose cleaner"), you MUST reject products that are cleaning tools like cloths, wipes, microfibers, or brushes.
-        2.  You should only accept cleaning tools if the user's query explicitly asks for one (e.g., "disinfectant wipes", "microfiber cloth").
-        3.  Pay close attention to the context of use. If the query specifies an application (e.g., "for furniture", "for floors"), you MUST reject products designed for a different application (e.g., "laundry", "dishes"), even if they share keywords like 'cleaner' or 'freshener'.
-
-        Respond with only "Yes" or "No".
-
-        --- EXAMPLES ---
-        User Search Query: "glass cleaner"
-        Product Title: "Microfiber cloth for glass"
-        Is the product a relevant match for the query?
-        No
-
-        User Search Query: "disinfectant wipes"
-        Product Title: "Dettol disinfectant wipes"
-        Is the product a relevant match for the query?
-        Yes
-
-        User Search Query: "fabric freshener for furnitures"
-        Product Title: "Loyal Fabric Softener & Freshener"
-        Is the product a relevant match for the query?
-        No
-        --- END EXAMPLES ---
-
-        --- CURRENT TASK ---
-        User Search Query: "{search_query}"
-        Product Title: "{product_name}"
-
-        Is the product a relevant match for the query?
-        """
-        try:
-            load_dotenv()
-            api_key = os.getenv("GEMINI_API_KEY")
-            if not api_key:
-                self._log("      -> ERROR: GEMINI_API_KEY no encontrada.")
-                return False
-
-            chat_history = [{"role": "user", "parts": [{"text": prompt}]}]
-            payload = {"contents": chat_history}
-            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={api_key}"
-            headers = {'Content-Type': 'application/json'}
-            response = requests.post(api_url, headers=headers, data=json.dumps(payload))
-            response.raise_for_status()
-            result = response.json()
-
-            if result.get('candidates'):
-                decision = result['candidates'][0]['content']['parts'][0]['text'].strip().lower()
-                self._log(f"      -> IA decision: {decision}")
-                return "yes" in decision
-            else:
-                self._log("      -> No candidates found in AI response.")
-                return False
-        except requests.exceptions.RequestException as e:
-            self._log(f"      -> Network error contacting AI agent: {e}")
-            return False
-        except Exception as e:
-            self._log(f"      -> Unexpected error processing AI response: {e}")
-            return False
+    # --- MÉTODO DE IA ELIMINADO ---
+    # El método _is_product_relevant_gemini se ha movido al RelevanceAgent.
 
     def _extract_product_details(self, product_url, search_mode):
+        """
+        Navega a la página de un producto y extrae sus detalles.
+        (Esta función no cambia)
+        """
         details = {
             'Product': 'Not found', 'Price_SAR': '0.00', 'Company': 'Not found',
             'URL': product_url, 'Unit of measurement': 'units', 'Total quantity': 0
@@ -130,6 +84,9 @@ class MumzworldScraper:
         return details
 
     def scrape(self, keyword, search_mode):
+        """
+        Método principal para ejecutar el proceso de scraping en Mumzworld.
+        """
         self._log(f"  [Mumzworld Scraper] Searching: '{keyword}' (Mode: {search_mode})")
         search_url = f"{self.base_url}search?q={quote(keyword)}"
         valid_products_found = []
@@ -161,7 +118,10 @@ class MumzworldScraper:
                     product_details = self._extract_product_details(product_url, search_mode)
 
                     if product_details.get('Total quantity', 0) > 0:
-                        is_relevant = self._is_product_relevant_gemini(product_details.get('Product'), keyword)
+                        # --- CAMBIO CLAVE ---
+                        # Ahora llamamos al servicio externo en lugar de a un método local.
+                        is_relevant = self.relevance_agent.is_relevant(product_details.get('Product'), keyword)
+                        
                         if is_relevant:
                             valid_products_found.append(product_details)
                             self._log(f"      -> VALID. Extracted: {product_details['Product'][:60]}...")

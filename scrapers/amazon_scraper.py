@@ -80,7 +80,7 @@ class AmazonScraper:
                             details['Total quantity'] = final_data['quantity']
                             details['Unit of measurement'] = final_data['unit']
                             details['Validation_Status'] = validation_status
-                            self._log(f"     [Validator] ✅ Final Decision: {final_data['quantity']} {final_data['unit']} (Source: {validation_status})")
+                            self._log(f"     [Validator] Final Decision: {final_data['quantity']} {final_data['unit']} (Source: {validation_status})")
                             break
                     if final_data:
                         break

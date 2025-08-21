@@ -6,13 +6,10 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from scrapers.amazon_scraper import AmazonScraper
 from scrapers.mumzworld_scraper import MumzworldScraper
-
+from services.ai_service import RelevanceAgent
 import config
 
 def main():
-    print("--- INICIANDO PROCESO DE SCRAPING ---")
-
-    print("1. Configurando el navegador...")
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
@@ -23,27 +20,25 @@ def main():
     try:
         driver = webdriver.Chrome(service=service, options=options)
     except Exception as e:
-        print(f"Error al iniciar el driver de Chrome: {e}")
+        print(f"Error: {e}")
         return
 
-    print(f"2. Leyendo instrucciones desde '{config.INSTRUCTIONS_FILE}'...")
     try:
         df_instructions = pd.read_csv(config.INSTRUCTIONS_FILE)
         df_instructions = df_instructions.dropna(subset=['Type of product', 'Sub industry'])
     except FileNotFoundError:
-        print(f"  -> Error: El archivo de instrucciones '{config.INSTRUCTIONS_FILE}' no fue encontrado.")
+        print(f"'{config.INSTRUCTIONS_FILE}' not found.")
         driver.quit()
         return
 
+    ai_agent = RelevanceAgent()
     scrapers = {
         'amazon': AmazonScraper(driver),
-        'mumzworld': MumzworldScraper(driver)
+        'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent)
     }
     
     all_found_products = []
 
-    print("\n--- 4. COMENZANDO BÚSQUEDA DE PRODUCTOS ---")
-    # --- 4. Bucle Principal de Scraping ---
     for index, row in df_instructions.iterrows():
         industry = row['Industry']
         sub_industry = row['Sub industry']
@@ -60,12 +55,12 @@ def main():
         
         search_mode = 'units' if any(keyword in original_type_of_product for keyword in ['wipes', 'rags', 'microfiber', 'brush']) else 'volume'
 
-        print(f"\n>> Buscando '{search_keyword}' para '{sub_industry}' (Modo: {search_mode})")
-        
+        print(f"\n>> Searching '{search_keyword}' for '{sub_industry}' (Mode: {search_mode})")
+
         sites_to_scrape = config.TARGET_MAP.get(sub_industry, []).copy()
         
         if base_keyword in config.MUMZWORLD_EXCLUSIONS and 'mumzworld' in sites_to_scrape:
-            print(f"   -> Excluyendo 'mumzworld' para '{base_keyword}' según las reglas.")
+            print(f"   -> Excluding 'mumzworld' for '{base_keyword}' according to rules.")
             sites_to_scrape.remove('mumzworld')
 
         for site_name in sites_to_scrape:
@@ -89,27 +84,26 @@ def main():
                         'total_quantity': product.get('Total quantity')
                     }
                     all_found_products.append(row_data)
-                    print(f"    -> RECOLECTADO: {product.get('Product', 'N/A')[:60]}... (Fuente: {site_name})")
+                    print(f"    -> SAVED: {product.get('Product', 'N/A')[:60]}... (Source: {site_name})")
             else:
-                print(f"   -> Advertencia: No se encontró un scraper para el sitio '{site_name}'.")
+                print(f"   -> Warning: No scraper found for site '{site_name}'.")
 
     if all_found_products:
-        print(f"\n--- 5. GUARDANDO {len(all_found_products)} PRODUCTOS ENCONTRADOS ---")
+        print(f"\n--- 5. SAVING {len(all_found_products)} FOUND PRODUCTS ---")
         try:
             with open(config.OUTPUT_CSV_FILE, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=config.CSV_COLUMNS)
                 writer.writeheader()
                 writer.writerows(all_found_products)
-            print(f"  -> ¡Éxito! Datos guardados en '{config.OUTPUT_CSV_FILE}'.")
+            print(f"  -> Success! Data saved to '{config.OUTPUT_CSV_FILE}'.")
         except IOError as e:
-            print(f"  -> Error al escribir en el archivo CSV: {e}")
+            print(f"  -> Error writing to CSV file: {e}")
     else:
-        print("\n--- 5. No se encontraron productos para guardar. ---")
+        print("\n--- 5. No products found to save. ---")
 
-    # --- 6. Cierre Limpio del Navegador ---
-    print("\n6. Cerrando el navegador.")
+    print("\n6. Closing the browser.")
     driver.quit()
-    print("\n--- PROCESO COMPLETADO ---")
+    print("\n--- PROCESS COMPLETED ---")
 
 if __name__ == "__main__":
     main()
