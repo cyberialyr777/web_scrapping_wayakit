@@ -7,8 +7,8 @@ CSV_COLUMNS = [
 ]
 
 TARGET_MAP = {
-    'Home': ['amazon', 'mumzworld'],
-    'Automotive': ['amazon'],
+    'Home': ['amazon', 'mumzworld', 'saco'],
+    'Automotive': ['amazon', 'saco'],
     'Pets': ['amazon'],
 }
 

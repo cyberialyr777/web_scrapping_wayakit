@@ -1,18 +1,20 @@
 import pandas as pd
 import time
 import csv
+import config
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from services.ai_service import RelevanceAgent
 from scrapers.amazon_scraper import AmazonScraper
 from scrapers.mumzworld_scraper import MumzworldScraper
-from services.ai_service import RelevanceAgent
-import config
+from scrapers.saco_scraper import SacoScraper
 
 def main():
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
+    options.add_argument('--disable-notifications')
+    # options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument(f"user-agent={config.USER_AGENT}")
     options.add_argument('--log-level=3')
@@ -34,7 +36,8 @@ def main():
     ai_agent = RelevanceAgent()
     scrapers = {
         'amazon': AmazonScraper(driver),
-        'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent)
+        'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent),
+        'saco': SacoScraper(driver)
     }
     
     all_found_products = []
