@@ -97,7 +97,7 @@ class MumzworldScraper:
             self.driver.get(search_url)
             WebDriverWait(self.driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.ProductCard_productCard__kFgss")))
             self._log("    > Search results page loaded. Analyzing products...")
-            time.sleep(2)
+            time.sleep(5)
 
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
             product_containers = soup.select("div.ProductCard_productCard__kFgss")
