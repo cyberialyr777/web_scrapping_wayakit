@@ -1,5 +1,5 @@
-INSTRUCTIONS_FILE = 'analysis - copia.csv'
-OUTPUT_CSV_FILE = 'resultados_finales_clasificados_v7.csv'
+INSTRUCTIONS_FILE = 'analysis.csv'
+OUTPUT_CSV_FILE = 'final_results.csv'
 CSV_COLUMNS = [
     'date', 'industry', 'subindustry', 'type_of_product', 'generic_product_type',
     'product', 'price_sar', 'company', 'source', 'url',

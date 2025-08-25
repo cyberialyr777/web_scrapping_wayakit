@@ -33,7 +33,9 @@ def main():
 
     ai_agent = RelevanceAgent()
     scrapers = {
-        'amazon': AmazonScraper(driver),
+        # --- CAMBIO AQUÍ ---
+        # Ahora pasamos el 'ai_agent' también a AmazonScraper
+        'amazon': AmazonScraper(driver, relevance_agent=ai_agent),
         'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent)
     }
     

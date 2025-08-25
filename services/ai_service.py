@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import time 
 from dotenv import load_dotenv
 
 class RelevanceAgent:
@@ -8,9 +9,9 @@ class RelevanceAgent:
         load_dotenv()
         self.api_key = os.getenv("GEMINI_API_KEY")
         if not self.api_key:
-            print("Api KEY not found")
+            print("API KEY not found")
 
-        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={self.api_key}"
+        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={self.api_key}"
         self.headers = {'Content-Type': 'application/json'}
 
     def _get_prompt(self, product_name, search_query):
@@ -54,22 +55,38 @@ class RelevanceAgent:
         prompt = self._get_prompt(product_name, search_query)
         chat_history = [{"role": "user", "parts": [{"text": prompt}]}]
         payload = {"contents": chat_history}
+        
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(self.api_url, headers=self.headers, data=json.dumps(payload))
+                
+                if response.status_code == 429:
+                    print("      -> Rate limit hit. Waiting for 60 seconds to reset...")
+                    time.sleep(60)
+                    continue 
 
-        try:
-            response = requests.post(self.api_url, headers=self.headers, data=json.dumps(payload))
-            response.raise_for_status()
-            result = response.json()
+                response.raise_for_status()
+                result = response.json()
 
-            if result.get('candidates'):
-                decision = result['candidates'][0]['content']['parts'][0]['text'].strip().lower()
-                print(f"      -> IA decision: {decision}")
-                return "yes" in decision
-            else:
-                print("      -> No candidates found in AI response.")
+                if result.get('candidates'):
+                    decision = result['candidates'][0]['content']['parts'][0]['text'].strip().lower()
+                    print(f"      -> IA decision: {decision}")
+                    return "yes" in decision
+                else:
+                    print("      -> No candidates found in AI response.")
+                    return False
+
+            except requests.exceptions.RequestException as e:
+                print(f"      -> Network error contacting AI agent: {e}")
+                if attempt < max_retries - 1:
+                    print(f"      -> Retrying in 10 seconds... (Attempt {attempt + 1}/{max_retries})")
+                    time.sleep(10)
+                else:
+                    return False 
+            except Exception as e:
+                print(f"      -> Unexpected error processing AI response: {e}")
                 return False
-        except requests.exceptions.RequestException as e:
-            print(f"      -> Network error contacting AI agent: {e}")
-            return False
-        except Exception as e:
-            print(f"      -> Unexpected error processing AI response: {e}")
-            return False
+        
+        print("      -> Failed to get a valid response from AI after multiple retries.")
+        return False

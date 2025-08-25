@@ -1,3 +1,4 @@
+import time 
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,8 +7,9 @@ from urllib.parse import urljoin
 from utils import parse_volume_string, parse_count_string
 
 class AmazonScraper:
-    def __init__(self, driver):
+    def __init__(self, driver, relevance_agent):
         self.driver = driver
+        self.relevance_agent = relevance_agent 
         self.base_url = "https://www.amazon.sa"
 
     def _log(self, msg):
@@ -129,11 +131,19 @@ class AmazonScraper:
                 
                 product_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                 product_details = self._extract_details_from_product_page(product_soup, search_mode)
+                product_details['URL'] = product_url
 
                 if product_details.get('Total quantity', 0) > 0:
-                    product_details['URL'] = product_url
-                    found_products.append(product_details)
-                    self._log(f"    -> VALID product found: {product_details.get('Product')[:60]}...")
+                    is_relevant = self.relevance_agent.is_relevant(product_details.get('Product'), keyword)
+                    
+                    self._log(f"      -> Waiting 4.5 seconds before next request...")
+                    time.sleep(5)
+
+                    if is_relevant:
+                        found_products.append(product_details)
+                        self._log(f"    -> VALID product found: {product_details.get('Product')[:60]}...")
+                    else:
+                        self._log(f"    -> DISCARDED (Not relevant by AI): {product_details.get('Product')[:60]}...")
                 else:
                     self._log(f"    -> DISCARDED (no valid data): {product_details.get('Product')[:60]}...")
         except Exception as e:
