@@ -93,7 +93,7 @@ class AmazonScraper:
     def scrape(self, keyword, search_mode):
         self._log(f"  [Amazon Scraper] Searching: '{keyword}' (Mode: {search_mode})")
         found_products = []
-        products_to_find = 40
+        products_to_find = 1
         search_url = f"{self.base_url}/s?k={keyword.replace(' ', '+')}&language=en_AE"
 
         try:

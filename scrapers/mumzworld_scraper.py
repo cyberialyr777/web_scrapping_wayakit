@@ -7,9 +7,6 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, quote
 from utils import parse_volume_string, parse_count_string
 
-# Ya no se importan 'os', 'json', 'requests', 'dotenv' aquí.
-# Esas dependencias ahora viven en 'services/ai_service.py'.
-
 class MumzworldScraper:
     def __init__(self, driver, relevance_agent):
         """
@@ -90,7 +87,7 @@ class MumzworldScraper:
         self._log(f"  [Mumzworld Scraper] Searching: '{keyword}' (Mode: {search_mode})")
         search_url = f"{self.base_url}search?q={quote(keyword)}"
         valid_products_found = []
-        products_to_find = 5
+        products_to_find = 1
 
         try:
             self._log(f"    > Navigating to: {search_url}")
