@@ -14,7 +14,7 @@ def main():
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_argument('--disable-notifications')
-    # options.add_argument('--headless')
+    options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument(f"user-agent={config.USER_AGENT}")
     options.add_argument('--log-level=3')
@@ -37,7 +37,7 @@ def main():
     scrapers = {
         'amazon': AmazonScraper(driver, relevance_agent=ai_agent),
         'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent),
-        'saco': SacoScraper(driver)
+        'saco': SacoScraper(driver, relevance_agent=ai_agent)
     }
     
     all_found_products = []
@@ -65,6 +65,10 @@ def main():
         if base_keyword in config.MUMZWORLD_EXCLUSIONS and 'mumzworld' in sites_to_scrape:
             print(f"   -> Excluding 'mumzworld' for '{base_keyword}' according to rules.")
             sites_to_scrape.remove('mumzworld')
+        
+        if base_keyword in config.SACO_EXCLUSIONS and 'saco' in sites_to_scrape:
+            print(f"   -> Excluding 'saco' for '{base_keyword}' according to rules.")
+            sites_to_scrape.remove('saco')
 
         for site_name in sites_to_scrape:
             scraper = scrapers.get(site_name)

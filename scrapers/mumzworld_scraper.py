@@ -8,26 +8,17 @@ from utils import parse_volume_string, parse_count_string
 
 class MumzworldScraper:
     def __init__(self, driver, relevance_agent):
-        """
-        Inicializa el scraper con una instancia del driver y el agente de relevancia.
-        """
         self.driver = driver
-        self.relevance_agent = relevance_agent  # Inyectamos el servicio de IA
+        self.relevance_agent = relevance_agent 
         self.base_url = "https://www.mumzworld.com/sa-en/"
 
     def _log(self, msg):
-        """Imprime un mensaje de log en la consola."""
         print(msg)
 
     def _safe_get_text(self, element):
-        """Extrae texto de un elemento BeautifulSoup de forma segura."""
         return element.get_text(strip=True) if element else None
 
     def _parse_mumzworld_count_string(self, text_string):
-        """
-        Función de utilidad específica para extraer conteos de unidades del título
-        en Mumzworld.
-        """
         if not text_string:
             return None
         match = re.search(r'(\d+)\s*(wipes|count|sheets|sachets|pack|pcs|pieces|pc|s)\b', text_string, re.I)
@@ -36,14 +27,7 @@ class MumzworldScraper:
         quantity = int(match.group(1))
         return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
 
-    # --- MÉTODO DE IA ELIMINADO ---
-    # El método _is_product_relevant_gemini se ha movido al RelevanceAgent.
-
     def _extract_product_details(self, product_url, search_mode):
-        """
-        Navega a la página de un producto y extrae sus detalles.
-        (Esta función no cambia)
-        """
         details = {
             'Product': 'Not found', 'Price_SAR': '0.00', 'Company': 'Not found',
             'URL': product_url, 'Unit of measurement': 'units', 'Total quantity': 0
@@ -80,9 +64,6 @@ class MumzworldScraper:
         return details
 
     def scrape(self, keyword, search_mode):
-        """
-        Método principal para ejecutar el proceso de scraping en Mumzworld.
-        """
         self._log(f"  [Mumzworld Scraper] Searching: '{keyword}' (Mode: {search_mode})")
         search_url = f"{self.base_url}search?q={quote(keyword)}"
         valid_products_found = []

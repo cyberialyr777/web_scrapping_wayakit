@@ -1,4 +1,4 @@
-INSTRUCTIONS_FILE = 'analysis - copia.csv'
+INSTRUCTIONS_FILE = 'analysis.csv'
 OUTPUT_CSV_FILE = 'final_results.csv'
 CSV_COLUMNS = [
     'date', 'industry', 'subindustry', 'type_of_product', 'generic_product_type',
@@ -7,7 +7,7 @@ CSV_COLUMNS = [
 ]
 
 TARGET_MAP = {
-    'Home': ['amazon', 'mumzworld', 'saco'],
+    'Home': ['saco', 'amazon', 'mumzworld'],
     'Automotive': ['amazon', 'saco'],
     'Pets': ['amazon'],
 }
@@ -21,7 +21,19 @@ MUMZWORLD_EXCLUSIONS = [
     'wax and floor polish',
     'carpet shampoo',
     'spot remover for carpets',
-    'leather cleaner'
+    'leather cleaner',
+]
+
+SACO_EXCLUSIONS = [
+    'microfiber for vehicle cleaning',
+    'long brush for seating cleaning',
+    'general sanitizer for vegetable and salad washing',
+    'fabric refresher',
+    'car surface disinfectant wet rags',
+    'car gum remover',
+    'car water spot remover',
+    'car bug and poop remover',
+    'waterless car wash product'
 ]
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"

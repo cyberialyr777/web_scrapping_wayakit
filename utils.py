@@ -4,7 +4,7 @@ def parse_volume_string(text_string):
     if not text_string:
         return None
     
-    match = re.search(r'(\d+\.?\d*)\s*(ml|l|g|kg|liter|litre|liters|milliliters|grams|kilograms|oz|ounce|fluid\sounces?)\b', text_string, re.I)
+    match = re.search(r'(\d+\.?\d*)\s*(ml|l|g|kg|liter|litre|liters|milliliters|grams|kilograms|oz|ounce|fl\s?oz|fluid\sounces?)\b', text_string, re.I)
     if not match:
         return None
         
@@ -41,4 +41,15 @@ def parse_count_string(text_string):
         quantity = int(match.group(4))
     else:
         return None
+    return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
+
+def parse_saco_count_string(text_string):
+    if not text_string:
+        return None
+    
+    match = re.search(r'(\d+)\s*-\s*(piece|wipes|rags)\b', text_string, re.I)
+    if not match:
+        return None
+        
+    quantity = int(match.group(1))
     return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
