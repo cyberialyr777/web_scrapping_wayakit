@@ -1,4 +1,3 @@
-import time 
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -136,8 +135,7 @@ class AmazonScraper:
                 if product_details.get('Total quantity', 0) > 0:
                     is_relevant = self.relevance_agent.is_relevant(product_details.get('Product'), keyword)
                     
-                    self._log(f"      -> Waiting 4.5 seconds before next request...")
-                    time.sleep(5)
+                    # Removed sleep for faster scraping
 
                     if is_relevant:
                         found_products.append(product_details)
