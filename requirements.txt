@@ -8,3 +8,4 @@ pandas
 
 # Utilities
 python-dotenv
+requests
