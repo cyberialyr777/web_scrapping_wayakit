@@ -97,6 +97,7 @@ class AmazonScraper:
 
         try:
             self.driver.get(search_url)
+            import time; time.sleep(3)
             WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-component-type='s-search-result']")))
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
             product_containers = soup.find_all('div', {'data-component-type': 's-search-result'})
@@ -117,13 +118,15 @@ class AmazonScraper:
                 product_url = urljoin(self.base_url, link_tag['href'])
                 self._log(f"    > Visiting product page: {product_url[:120]}...")
                 self.driver.get(product_url)
-                
                 try:
-                    WebDriverWait(self.driver, 10).until(EC.any_of(
-                        EC.presence_of_element_located((By.ID, "productDetails_techSpec_section_1")),
-                        EC.presence_of_element_located((By.ID, "detailBullets_feature_div")),
-                        EC.presence_of_element_located((By.CLASS_NAME, "po-item_volume"))
-                    ))
+                    # WebDriverWait(self.driver, 10).until(EC.any_of(
+                    #     EC.presence_of_element_located((By.ID, "productDetails_techSpec_section_1")),
+                    #     EC.presence_of_element_located((By.ID, "detailBullets_feature_div")),
+                    #     EC.presence_of_element_located((By.CLASS_NAME, "po-item_volume"))
+                    # ))
+                    WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.ID, "productTitle"))
+                    )
                 except Exception:
                     self._log(f"    ! No details section found for product. Skipping.")
                     continue
@@ -134,8 +137,7 @@ class AmazonScraper:
 
                 if product_details.get('Total quantity', 0) > 0:
                     is_relevant = self.relevance_agent.is_relevant(product_details.get('Product'), keyword)
-                    
-                    # Removed sleep for faster scraping
+                    time.sleep(2)
 
                     if is_relevant:
                         found_products.append(product_details)

@@ -14,7 +14,7 @@ def main():
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
     options.add_argument('--disable-notifications')
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument(f"user-agent={config.USER_AGENT}")
     options.add_argument('--log-level=3')

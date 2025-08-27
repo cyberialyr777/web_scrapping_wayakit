@@ -67,7 +67,7 @@ class MumzworldScraper:
         self._log(f"  [Mumzworld Scraper] Searching: '{keyword}' (Mode: {search_mode})")
         search_url = f"{self.base_url}search?q={quote(keyword)}"
         valid_products_found = []
-        products_to_find = 1
+        products_to_find = 8
 
         try:
             self._log(f"    > Navigating to: {search_url}")
@@ -94,8 +94,6 @@ class MumzworldScraper:
                     product_details = self._extract_product_details(product_url, search_mode)
 
                     if product_details.get('Total quantity', 0) > 0:
-                        # --- CAMBIO CLAVE ---
-                        # Ahora llamamos al servicio externo en lugar de a un método local.
                         is_relevant = self.relevance_agent.is_relevant(product_details.get('Product'), keyword)
                         
                         if is_relevant:
