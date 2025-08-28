@@ -1,5 +1,5 @@
-INSTRUCTIONS_FILE = 'analysis - copia.csv'
-OUTPUT_CSV_FILE = 'final_results2.csv'
+INSTRUCTIONS_FILE = 'analysis.csv'
+OUTPUT_CSV_FILE = 'final_results_test.csv'
 CSV_COLUMNS = [
     'date', 'industry', 'subindustry', 'type_of_product', 'generic_product_type',
     'product', 'price_sar', 'company', 'source', 'url',
@@ -33,7 +33,8 @@ SACO_EXCLUSIONS = [
     'car gum remover',
     'car water spot remover',
     'car bug and poop remover',
-    'waterless car wash product'
+    'waterless car wash product',
+    'car surface disinfectant'
 ]
 
 # USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"

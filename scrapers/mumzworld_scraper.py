@@ -4,7 +4,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, quote
-from utils import parse_volume_string, parse_count_string
+from utils import parse_volume_string
 
 class MumzworldScraper:
     def __init__(self, driver, relevance_agent):
