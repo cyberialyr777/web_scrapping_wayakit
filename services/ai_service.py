@@ -16,29 +16,66 @@ class RelevanceAgent:
 
     def _get_prompt(self, product_name, search_query):
         return f"""
-        You are an expert shopping assistant. Your task is to determine if a product title is a relevant match for a user's search query.
-        You must follow these rules:
-        1.  If the user's query is for a liquid or spray cleaner (e.g., "glass cleaner", "all purpose cleaner"), you MUST reject products that are cleaning tools like cloths, wipes, microfibers, or brushes.
-        2.  You should only accept cleaning tools if the user's query explicitly asks for one (e.g., "disinfectant wipes", "microfiber cloth").
-        3.  Pay close attention to the context of use. If the query specifies an application (e.g., "for furniture", "for floors"), you MUST reject products designed for a different application (e.g., "laundry", "dishes"), even if they share keywords like 'cleaner' or 'freshener'.
+        You are a highly precise expert shopping assistant. Your task is to determine if a product title is a relevant and specific match for a user's search query. Your decisions must be strict.
 
+        --- RULES ---
+
+        ## General Rules:
+        1.  **Tools vs. Cleaners:** If the query is for a liquid/spray cleaner (e.g., "glass cleaner"), you MUST REJECT cleaning tools (cloths, wipes, brushes). Only accept tools if the query explicitly asks for one (e.g., "disinfectant wipes").
+        2.  **Context of Use:** If the query specifies an application (e.g., "for furniture"), you MUST REJECT products for a different application (e.g., "laundry," "dishes").
+
+        ## Specificity Rules:
+        3.  **Specialized Surfaces:** If the query asks for a cleaner for a specific surface (e.g., "hardwood floor cleaner"), you MUST REJECT general-purpose or multi-surface cleaners. The product must be explicitly for that surface.
+        4.  **Specialized Products:** If the query is for a specialized product (e.g., "wax and floor polish," "waterless car wash"), you MUST REJECT general cleaners. The product title must clearly indicate it performs that specific function.
+        5.  **Automotive Focus:** If the query is for a car cleaning product (e.g., "microfiber for vehicle," "car disinfectant rags"), you MUST REJECT general-purpose products. The product must be explicitly marketed for automotive use.
+
+        ## Final Instruction:
         Respond with only "Yes" or "No".
 
         --- EXAMPLES ---
+
+        # Example (Tools vs. Cleaner)
         User Search Query: "glass cleaner"
         Product Title: "Microfiber cloth for glass"
         Is the product a relevant match for the query?
         No
 
-        User Search Query: "disinfectant wipes"
-        Product Title: "Dettol disinfectant wipes"
+        # Example (Context of Use)
+        User Search Query: "fabric freshener for furnitures"
+        Product Title: "Loyal Fabric Softener & Freshener for Laundry"
+        Is the product a relevant match for the query?
+        No
+
+        # Example (Specialized Surface)
+        User Search Query: "hardwood floor cleaner"
+        Product Title: "Mr. Clean Multi-Purpose Floor Cleaner"
+        Is the product a relevant match for the query?
+        No
+        
+        # Example (Specialized Product)
+        User Search Query: "wax and floor polish"
+        Product Title: "Pledge Floor Gloss, Polish and Wax"
         Is the product a relevant match for the query?
         Yes
 
-        User Search Query: "fabric freshener for furnitures"
-        Product Title: "Loyal Fabric Softener & Freshener"
+        # Example (Automotive Focus)
+        User Search Query: "car surface disinfectant wet rags"
+        Product Title: "Lysol Disinfecting Wipes, Multi-Surface Lemon Scent"
         Is the product a relevant match for the query?
         No
+
+        # Example (Automotive Focus)
+        User Search Query: "microfiber for vehicle cleaning"
+        Product Title: "Armor All Car Cleaning Microfiber Towel"
+        Is the product a relevant match for the query?
+        Yes
+        
+        # Example (Waterless Product)
+        User Search Query: "waterless car wash"
+        Product Title: "Meguiar's Gold Class Car Wash Shampoo & Conditioner"
+        Is the product a relevant match for the query?
+        No
+
         --- END EXAMPLES ---
 
         --- CURRENT TASK ---

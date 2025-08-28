@@ -92,7 +92,7 @@ class AmazonScraper:
     def scrape(self, keyword, search_mode):
         self._log(f"  [Amazon Scraper] Searching: '{keyword}' (Mode: {search_mode})")
         found_products = []
-        products_to_find = 40
+        products_to_find = 2
         search_url = f"{self.base_url}/s?k={keyword.replace(' ', '+')}&language=en_AE"
 
         try:
@@ -124,9 +124,6 @@ class AmazonScraper:
                         EC.presence_of_element_located((By.ID, "detailBullets_feature_div")),
                         EC.presence_of_element_located((By.CLASS_NAME, "po-item_volume"))
                     ))
-                    # WebDriverWait(self.driver, 15).until(
-                    #     EC.presence_of_element_located((By.ID, "productTitle"))
-                    # )
                 except Exception:
                     self._log(f"    ! No details section found for product. Skipping.")
                     continue

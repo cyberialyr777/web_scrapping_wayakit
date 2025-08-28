@@ -67,7 +67,7 @@ class MumzworldScraper:
         self._log(f"  [Mumzworld Scraper] Searching: '{keyword}' (Mode: {search_mode})")
         search_url = f"{self.base_url}search?q={quote(keyword)}"
         valid_products_found = []
-        products_to_find = 6
+        products_to_find = 2
 
         try:
             self._log(f"    > Navigating to: {search_url}")

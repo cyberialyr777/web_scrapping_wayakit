@@ -30,11 +30,11 @@ SACO_EXCLUSIONS = [
     'general sanitizer for vegetable and salad washing',
     'fabric refresher',
     'car surface disinfectant wet rags',
-    'car gum remover',
     'car water spot remover',
     'car bug and poop remover',
     'waterless car wash product',
-    'car surface disinfectant'
+    'car surface disinfectant',
+    'car gum remover',
 ]
 
 # USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"

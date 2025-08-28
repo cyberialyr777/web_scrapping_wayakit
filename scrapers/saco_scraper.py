@@ -77,7 +77,7 @@ class SacoScraper:
         
         all_found_products = []
         page_num = 1
-        products_to_find_limit = 5
+        products_to_find_limit = 2
 
         self.driver.get(search_url)
         self._handle_overlays()
@@ -94,10 +94,9 @@ class SacoScraper:
             self._log(f"--- Analyzing Page {page_num} ---")
             
             search_page_url = self.driver.current_url
-            time.sleep(5) # Pausa para asegurar que todo el JS cargue
+            time.sleep(5)
 
-            # --- MEJORA INTEGRADA ---
-            # 1. Obtenemos todos los contenedores de productos.
+            
             product_containers = self.driver.find_elements(By.CSS_SELECTOR, "div.product-inner-container")
             num_containers = len(product_containers)
 
@@ -107,27 +106,27 @@ class SacoScraper:
 
             self._log(f"    > Found {num_containers} product containers on this page.")
 
-            # 2. Iteramos a través de cada contenedor.
+            
             for i in range(num_containers):
                 if len(all_found_products) >= products_to_find_limit:
                     break
                 try:
-                    # Siempre volvemos a buscar los contenedores para evitar StaleElementReferenceException
+                    
                     current_containers = self.driver.find_elements(By.CSS_SELECTOR, "div.product-inner-container")
                     if i >= len(current_containers):
                         break
                     
                     container = current_containers[i]
 
-                    # 3. Verificamos el contenido DENTRO del contenedor actual.
+                    
                     try:
                         product_link = container.find_element(By.CSS_SELECTOR, "p.product-name a")
                         if not product_link.text.strip():
                             self._log(f"      -> Skipping empty product container #{i+1}.")
-                            continue # Si no tiene texto, es un contenedor vacío.
+                            continue 
                     except NoSuchElementException:
                         self._log(f"      -> Skipping container #{i+1} (no product link found inside).")
-                        continue # Si ni siquiera tiene el enlace.
+                        continue 
 
                     self._log(f"      -> Processing product {i+1}/{num_containers}...")
                     
@@ -152,7 +151,7 @@ class SacoScraper:
                     else:
                         self._log(f"      -> DISCARDED (no quantity): {product_details.get('Product', 'N/A')[:60]}...")
 
-                    self.driver.get(search_page_url) # Usamos get() en vez de back() para asegurar una recarga limpia
+                    self.driver.get(search_page_url)
                     WebDriverWait(self.driver, 20).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, "div.product-inner-container"))
                     )

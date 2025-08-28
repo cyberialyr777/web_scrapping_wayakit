@@ -1,7 +1,7 @@
 import pandas as pd
 import time
 import csv
-import os  # Importamos 'os' para verificar si el archivo ya existe
+import os  
 import config
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -12,7 +12,6 @@ from scrapers.mumzworld_scraper import MumzworldScraper
 from scrapers.saco_scraper import SacoScraper
 
 def main():
-    # --- 1. LEER LAS INSTRUCCIONES UNA SOLA VEZ ---
     try:
         df_instructions = pd.read_csv(config.INSTRUCTIONS_FILE)
         df_instructions = df_instructions.dropna(subset=['Type of product', 'Sub industry'])
@@ -20,8 +19,6 @@ def main():
         print(f"Error: El archivo de instrucciones '{config.INSTRUCTIONS_FILE}' no fue encontrado.")
         return
 
-    # --- 2. PREPARAR EL ARCHIVO CSV DE SALIDA ---
-    # Verificamos si el archivo de salida ya existe para decidir si escribimos el encabezado.
     write_header = not os.path.exists(config.OUTPUT_CSV_FILE)
     
     with open(config.OUTPUT_CSV_FILE, 'a', newline='', encoding='utf-8') as f:
@@ -29,33 +26,29 @@ def main():
         if write_header:
             writer.writeheader()
 
-    # --- 3. BUCLE PRINCIPAL POR INDUSTRIA ---
-    # Iteramos sobre cada industria definida en el TARGET_MAP de config.py
     for industry_to_scrape in config.TARGET_MAP.keys():
         print(f"\n=================================================")
         print(f"  INICIANDO PROCESO PARA LA SUBINDUSTRIA: '{industry_to_scrape}'")
         print(f"=================================================\n")
 
-        # --- INICIO DEL CICLO: CONFIGURAR NAVEGADOR ---
         service = Service(ChromeDriverManager().install())
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
         options.add_argument('--disable-notifications')
-        # options.add_argument('--headless')
+        options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_argument(f"user-agent={config.USER_AGENT}")
         options.add_argument('--log-level=3')
 
-        driver = None  # Inicializamos como None
+        driver = None 
         try:
             driver = webdriver.Chrome(service=service, options=options)
             print("  -> Navegador iniciado correctamente para esta subindustria.\n")
         except Exception as e:
             print(f"  -> Error al iniciar el navegador para '{industry_to_scrape}': {e}")
-            continue  # Saltamos a la siguiente industria si el navegador no puede iniciar
-
-        # --- FILTRAR INSTRUCCIONES PARA LA INDUSTRIA ACTUAL ---
+            continue
+        
         df_industry_instructions = df_instructions[df_instructions['Sub industry'] == industry_to_scrape].copy()
 
         if df_industry_instructions.empty:
@@ -72,7 +65,6 @@ def main():
         
         all_found_products = []
 
-        # --- BUCLE DE SCRAPING PARA LOS PRODUCTOS DE LA INDUSTRIA ACTUAL ---
         for index, row in df_industry_instructions.iterrows():
             sub_industry = row['Sub industry']
             original_type_of_product = str(row['Type of product']).lower()
@@ -122,11 +114,9 @@ def main():
                 else:
                     print(f"   -> Advertencia: No se encontró scraper para el sitio '{site_name}'.")
 
-        # --- GUARDAR RESULTADOS DE LA INDUSTRIA ACTUAL ---
         if all_found_products:
             print(f"\n--- Guardando {len(all_found_products)} productos encontrados para la industria '{industry_to_scrape}' ---")
             try:
-                # Abrimos el archivo en modo 'append' para añadir los nuevos resultados
                 with open(config.OUTPUT_CSV_FILE, 'a', newline='', encoding='utf-8') as f:
                     writer = csv.DictWriter(f, fieldnames=config.CSV_COLUMNS)
                     writer.writerows(all_found_products)
@@ -136,7 +126,6 @@ def main():
         else:
             print(f"\n--- No se encontraron productos para guardar en la industria '{industry_to_scrape}'. ---")
 
-        # --- FIN DEL CICLO: CERRAR NAVEGADOR ---
         if driver:
             driver.quit()
         print(f"\n  -> Navegador cerrado. Proceso para '{industry_to_scrape}' completado.")
