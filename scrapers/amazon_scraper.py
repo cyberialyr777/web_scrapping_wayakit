@@ -119,14 +119,14 @@ class AmazonScraper:
                 self._log(f"    > Visiting product page: {product_url[:120]}...")
                 self.driver.get(product_url)
                 try:
-                    # WebDriverWait(self.driver, 10).until(EC.any_of(
-                    #     EC.presence_of_element_located((By.ID, "productDetails_techSpec_section_1")),
-                    #     EC.presence_of_element_located((By.ID, "detailBullets_feature_div")),
-                    #     EC.presence_of_element_located((By.CLASS_NAME, "po-item_volume"))
-                    # ))
-                    WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_element_located((By.ID, "productTitle"))
-                    )
+                    WebDriverWait(self.driver, 10).until(EC.any_of(
+                        EC.presence_of_element_located((By.ID, "productDetails_techSpec_section_1")),
+                        EC.presence_of_element_located((By.ID, "detailBullets_feature_div")),
+                        EC.presence_of_element_located((By.CLASS_NAME, "po-item_volume"))
+                    ))
+                    # WebDriverWait(self.driver, 15).until(
+                    #     EC.presence_of_element_located((By.ID, "productTitle"))
+                    # )
                 except Exception:
                     self._log(f"    ! No details section found for product. Skipping.")
                     continue

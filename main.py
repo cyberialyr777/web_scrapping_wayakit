@@ -13,6 +13,8 @@ from scrapers.saco_scraper import SacoScraper
 def main():
     service = Service(ChromeDriverManager().install())
     options = webdriver.ChromeOptions()
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
     options.add_argument('--disable-notifications')
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
