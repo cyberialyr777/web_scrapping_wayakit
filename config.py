@@ -1,5 +1,5 @@
 INSTRUCTIONS_FILE = 'analysis.csv'
-OUTPUT_CSV_FILE = 'final_results_test.csv'
+OUTPUT_CSV_FILE = 'fine_test2.csv'
 CSV_COLUMNS = [
     'date', 'industry', 'subindustry', 'type_of_product', 'generic_product_type',
     'product', 'price_sar', 'company', 'source', 'url',
@@ -10,6 +10,16 @@ TARGET_MAP = {
     'Home': ['amazon', 'mumzworld', 'saco'],
     'Automotive': ['amazon', 'saco'],
     'Pets': ['amazon'],
+    'Airports': ['fine'],
+    'Restaurants': ['fine'],
+    'Facilities management': ['fine'],
+    'Faith': ['fine'],
+    'Gyms': ['fine'],
+    'Land Transportation': ['fine'],
+    'Spas and salons': ['fine'],
+    'Hotels': ['fine'],
+    'Healthcare': ['fine'],
+    'Industrial facilities': ['fine']
 }
 
 MUMZWORLD_EXCLUSIONS = [

@@ -10,6 +10,7 @@ from services.ai_service import RelevanceAgent
 from scrapers.amazon_scraper import AmazonScraper
 from scrapers.mumzworld_scraper import MumzworldScraper
 from scrapers.saco_scraper import SacoScraper
+from scrapers.fine_scraper import FineScraper
 
 def main():
     try:
@@ -36,7 +37,7 @@ def main():
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
         options.add_argument('--disable-notifications')
-        options.add_argument('--headless')
+        # options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_argument(f"user-agent={config.USER_AGENT}")
         options.add_argument('--log-level=3')
@@ -60,28 +61,53 @@ def main():
         scrapers = {
             'amazon': AmazonScraper(driver, relevance_agent=ai_agent),
             'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent),
-            'saco': SacoScraper(driver, relevance_agent=ai_agent)
+            'saco': SacoScraper(driver, relevance_agent=ai_agent),
+            'fine': FineScraper(driver, relevance_agent=ai_agent)
         }
         
         all_found_products = []
 
         for index, row in df_industry_instructions.iterrows():
             sub_industry = row['Sub industry']
-            original_type_of_product = str(row['Type of product']).lower()
+            original_type_of_product = str(row['Type of product'])
+            original_type_of_product_lower = original_type_of_product.lower() 
             generic_type_of_product = str(row['Generic product type'])
             search_modifier = str(row['Search Modifiers'])
             
             try:
-                base_keyword = original_type_of_product.split('-', 1)[1].strip()
+                base_keyword = original_type_of_product_lower.split('-', 1)[1].strip()
             except IndexError:
-                base_keyword = original_type_of_product.strip()
+                base_keyword = original_type_of_product_lower.strip()
 
-            search_keyword = f"{base_keyword} {search_modifier}" if search_modifier and not pd.isna(row.get('Search Modifiers')) else base_keyword
-            search_mode = 'units' if any(keyword in original_type_of_product for keyword in ['wipes', 'rags', 'microfiber', 'brush']) else 'volume'
+            search_modifiers = row.get('Search Modifiers', '')
+            
+            fine_search_keyword = None
+            if pd.notna(search_modifiers) and 'fine:' in str(search_modifiers):
+                fine_parts = str(search_modifiers).split('fine:')
+                if len(fine_parts) > 1:
+                    fine_search_keyword = fine_parts[1].strip()
+            
+            search_keyword = f"{base_keyword} {search_modifiers}" if search_modifiers and not pd.isna(row.get('Search Modifiers')) and 'fine:' not in str(search_modifiers) else base_keyword
+            search_mode = 'units' if any(keyword in original_type_of_product_lower for keyword in ['wipes', 'rags', 'microfiber', 'brush']) else 'volume'
 
             print(f">> Buscando '{search_keyword}' para '{sub_industry}' (Modo: {search_mode})")
+            if fine_search_keyword:
+                print(f"   -> Fine Store usará: '{fine_search_keyword}'")
 
             sites_to_scrape = config.TARGET_MAP.get(sub_industry, []).copy()
+            
+            fine_subindustries = ['Restaurants', 'Airports', 'Facilities Management', 'Hotels', 
+                                 'Land Transportation', 'Healthcare', 'Gyms', 'Spas and Salons', 
+                                 'Industrial Facilities', 'Faith']
+            
+            if sub_industry in fine_subindustries:
+                if fine_search_keyword:
+                    sites_to_scrape = ['fine']
+                    print(f"   -> Usando SOLO Fine Store para '{original_type_of_product}' -> '{fine_search_keyword}'")
+                else:
+                    if 'fine' in sites_to_scrape:
+                        sites_to_scrape.remove('fine')
+                        print(f"   -> Excluyendo Fine (sin mapeo específico para '{original_type_of_product}')")
             
             if base_keyword in config.MUMZWORLD_EXCLUSIONS and 'mumzworld' in sites_to_scrape:
                 sites_to_scrape.remove('mumzworld')
@@ -92,7 +118,8 @@ def main():
             for site_name in sites_to_scrape:
                 scraper = scrapers.get(site_name)
                 if scraper:
-                    found_products = scraper.scrape(search_keyword, search_mode)
+                    keyword_to_use = fine_search_keyword if site_name == 'fine' and fine_search_keyword else search_keyword
+                    found_products = scraper.scrape(keyword_to_use, search_mode)
                     
                     for product in found_products:
                         row_data = {
