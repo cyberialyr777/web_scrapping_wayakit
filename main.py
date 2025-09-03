@@ -11,6 +11,7 @@ from scrapers.amazon_scraper import AmazonScraper
 from scrapers.mumzworld_scraper import MumzworldScraper
 from scrapers.saco_scraper import SacoScraper
 from scrapers.fine_scraper import FineScraper
+from scrapers.cleandishes_scraper import CleanDishesScraper
 
 def main():
     try:
@@ -62,7 +63,8 @@ def main():
             'amazon': AmazonScraper(driver, relevance_agent=ai_agent),
             'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent),
             'saco': SacoScraper(driver, relevance_agent=ai_agent),
-            'fine': FineScraper(driver, relevance_agent=ai_agent)
+            'fine': FineScraper(driver, relevance_agent=ai_agent),
+            'cleandishes': CleanDishesScraper(driver, relevance_agent=ai_agent)
         }
         
         all_found_products = []
@@ -114,6 +116,9 @@ def main():
             
             if base_keyword in config.SACO_EXCLUSIONS and 'saco' in sites_to_scrape:
                 sites_to_scrape.remove('saco')
+            
+            if base_keyword in config.CLEANDISHES_EXCLUSIONS and 'cleandishes' in sites_to_scrape:
+                sites_to_scrape.remove('cleandishes')
 
             for site_name in sites_to_scrape:
                 scraper = scrapers.get(site_name)

@@ -7,7 +7,7 @@ CSV_COLUMNS = [
 ]
 
 TARGET_MAP = {
-    'Home': ['amazon', 'mumzworld', 'saco'],
+    'Home': ['amazon', 'mumzworld', 'saco', 'cleandishes'],
     'Automotive': ['amazon', 'saco'],
     'Pets': ['amazon'],
     'Airports': ['fine'],
@@ -45,6 +45,11 @@ SACO_EXCLUSIONS = [
     'waterless car wash product',
     'car surface disinfectant',
     'car gum remover',
+]
+
+CLEANDISHES_EXCLUSIONS = [
+    # Add any specific exclusions for Clean Dishes if needed
+    # For now, we'll keep it empty and let it handle all home products
 ]
 
 # USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
