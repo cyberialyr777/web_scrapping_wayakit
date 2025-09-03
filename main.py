@@ -11,6 +11,7 @@ from scrapers.amazon_scraper import AmazonScraper
 from scrapers.mumzworld_scraper import MumzworldScraper
 from scrapers.saco_scraper import SacoScraper
 from scrapers.fine_scraper import FineScraper
+from scrapers.ezorder_scraper import EzorderScraper
 
 def main():
     try:
@@ -62,7 +63,8 @@ def main():
             'amazon': AmazonScraper(driver, relevance_agent=ai_agent),
             'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent),
             'saco': SacoScraper(driver, relevance_agent=ai_agent),
-            'fine': FineScraper(driver, relevance_agent=ai_agent)
+            'fine': FineScraper(driver, relevance_agent=ai_agent),
+            'ezorder': EzorderScraper(driver, relevance_agent=ai_agent)
         }
         
         all_found_products = []

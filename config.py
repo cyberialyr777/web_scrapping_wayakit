@@ -10,16 +10,16 @@ TARGET_MAP = {
     'Home': ['amazon', 'mumzworld', 'saco'],
     'Automotive': ['amazon', 'saco'],
     'Pets': ['amazon'],
-    'Airports': ['fine'],
+    'Airports': ['fine', 'ezorder'],
     'Restaurants': ['fine'],
-    'Facilities management': ['fine'],
-    'Faith': ['fine'],
-    'Gyms': ['fine'],
+    'Facilities management': ['fine', 'ezorder'],
+    'Faith': ['fine', 'ezorder'],
+    'Gyms': ['fine', 'ezorder'],
     'Land Transportation': ['fine'],
-    'Spas and salons': ['fine'],
-    'Hotels': ['fine'],
+    'Spas and salons': ['fine', 'ezorder'],
+    'Hotels': ['fine', 'ezorder'],
     'Healthcare': ['fine'],
-    'Industrial facilities': ['fine']
+    'Industrial facilities': ['fine', 'ezorder']
 }
 
 MUMZWORLD_EXCLUSIONS = [
