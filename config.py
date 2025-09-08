@@ -1,5 +1,5 @@
-INSTRUCTIONS_FILE = 'analysis.csv'
-OUTPUT_CSV_FILE = 'fine_test2.csv'
+INSTRUCTIONS_FILE = 'analysis - copia1.csv'
+OUTPUT_CSV_FILE = 'fine_gogreen_test1.csv'
 CSV_COLUMNS = [
     'date', 'industry', 'subindustry', 'type_of_product', 'generic_product_type',
     'product', 'price_sar', 'company', 'source', 'url',
@@ -12,14 +12,14 @@ TARGET_MAP = {
     'Pets': ['amazon'],
     'Airports': ['fine'],
     'Restaurants': ['fine'],
-    'Facilities management': ['fine'],
-    'Faith': ['fine'],
-    'Gyms': ['fine'],
-    'Land Transportation': ['fine'],
-    'Spas and salons': ['fine'],
-    'Hotels': ['fine'],
+    'Facilities management': ['fine', 'gogreen'],
+    'Faith': ['fine', 'gogreen'],
+    'Gyms': ['fine', 'gogreen'],
+    'Land Transportation': ['fine', 'gogreen'],
+    'Spas and salons': ['fine', 'gogreen'],
+    'Hotels': ['fine', 'gogreen'],
     'Healthcare': ['fine'],
-    'Industrial facilities': ['fine']
+    'Industrial facilities': ['fine', 'gogreen']
 }
 
 MUMZWORLD_EXCLUSIONS = [

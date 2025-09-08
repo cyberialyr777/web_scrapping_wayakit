@@ -4,7 +4,7 @@ def parse_volume_string(text_string):
     if not text_string:
         return None
     
-    match = re.search(r'(\d+\.?\d*)\s*(ml|l|g|kg|liter|litre|liters|milliliters|grams|kilograms|oz|ounce|fl\s?oz|fluid\sounces?)\b', text_string, re.I)
+    match = re.search(r'(\d+\.?\d*)\s*(ltr|ml|l|g|kg|liter|litre|liters|milliliters|grams|kilograms|oz|ounce|fl\s?oz|fluid\sounces?)\b', text_string, re.I)
     if not match:
         return None
         
@@ -14,7 +14,7 @@ def parse_volume_string(text_string):
     
     if 'milliliter' in unit or unit == 'ml':
         unit = 'ml'
-    elif 'liter' in unit or unit == 'l':
+    elif 'liter' in unit or unit == 'l' or unit == 'ltr':
         normalized_value = quantity * 1000
         unit = 'L'
     elif 'gram' in unit or unit == 'g':
@@ -53,3 +53,34 @@ def parse_saco_count_string(text_string):
         
     quantity = int(match.group(1))
     return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
+
+def parse_volume_with_multiplier(text_string):
+    """
+    Parsea una cadena para extraer el volumen, manejando formatos simples (ej. "5 LTR")
+    y formatos con multiplicador (ej. "6x500ml", "6 Pcs X 3 LTR").
+    """
+    if not text_string:
+        return None
+
+    base_volume_data = parse_volume_string(text_string)
+    if not base_volume_data:
+        return None # Si no hay una unidad de volumen base (ml, L, etc.), no podemos continuar.
+
+    multiplier = 1
+    # Buscar patrones de multiplicador como "6x", "6 X", "6PcsX", "pack of 6"
+    multiplier_match = re.search(r'(\d+)\s*[xX]\s*|(\d+)\s*Pcs\s*[xX]\s*', text_string, re.I)
+    
+    if multiplier_match:
+        # Encontrar cuál de los grupos de captura tiene el número
+        found_multiplier = multiplier_match.group(1) or multiplier_match.group(2)
+        if found_multiplier:
+            multiplier = int(found_multiplier)
+
+    # Calcular la cantidad total
+    total_quantity = base_volume_data['quantity'] * multiplier
+    
+    return {
+        'quantity': total_quantity,
+        'unit': base_volume_data['unit'],
+        'normalized': base_volume_data['normalized'] * multiplier
+    }

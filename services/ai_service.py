@@ -23,11 +23,12 @@ class RelevanceAgent:
         ## General Rules:
         1.  **Tools vs. Cleaners:** If the query is for a liquid/spray cleaner (e.g., "glass cleaner"), you MUST REJECT cleaning tools (cloths, wipes, brushes). Only accept tools if the query explicitly asks for one (e.g., "disinfectant wipes").
         2.  **Context of Use:** If the query specifies an application (e.g., "for furniture"), you MUST REJECT products for a different application (e.g., "laundry," "dishes").
+        3.  **Bundles and Promotions:** If the product title indicates a bundle, promo, or combo of DIFFERENT product types (e.g., "Glass Cleaner + Surface Disinfectant"), you MUST REJECT it. The product must be only what the user searched for. Multi-packs of the SAME item are acceptable (e.g., "Glass Cleaner, Pack of 2").
 
         ## Specificity Rules:
-        3.  **Specialized Surfaces:** If the query asks for a cleaner for a specific surface (e.g., "hardwood floor cleaner"), you MUST REJECT general-purpose or multi-surface cleaners. The product must be explicitly for that surface.
-        4.  **Specialized Products:** If the query is for a specialized product (e.g., "wax and floor polish," "waterless car wash"), you MUST REJECT general cleaners. The product title must clearly indicate it performs that specific function.
-        5.  **Automotive Focus:** If the query is for a car cleaning product (e.g., "microfiber for vehicle," "car disinfectant rags"), you MUST REJECT general-purpose products. The product must be explicitly marketed for automotive use.
+        4.  **Specialized Surfaces:** If the query asks for a cleaner for a specific surface (e.g., "hardwood floor cleaner"), you MUST REJECT general-purpose or multi-surface cleaners. The product must be explicitly for that surface.
+        5.  **Specialized Products:** If the query is for a specialized product (e.g., "wax and floor polish," "waterless car wash"), you MUST REJECT general cleaners. The product title must clearly indicate it performs that specific function.
+        6.  **Automotive Focus:** If the query is for a car cleaning product (e.g., "microfiber for vehicle," "car disinfectant rags"), you MUST REJECT general-purpose products. The product must be explicitly marketed for automotive use.
 
         ## Final Instruction:
         Respond with only "Yes" or "No".
@@ -37,6 +38,12 @@ class RelevanceAgent:
         # Example (Tools vs. Cleaner)
         User Search Query: "glass cleaner"
         Product Title: "Microfiber cloth for glass"
+        Is the product a relevant match for the query?
+        No
+
+        # Example (Bundles and Promotions)
+        User Search Query: "glass cleaner"
+        Product Title: "Go Green Promo Surface Cleaner 750 ML + Glass Cleaner 650 ML"
         Is the product a relevant match for the query?
         No
 
