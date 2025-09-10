@@ -12,14 +12,14 @@ TARGET_MAP = {
     'Pets': ['amazon'],
     'Airports': ['fine'],
     'Restaurants': ['fine'],
-    'Facilities management': ['fine', 'gogreen'],
-    'Faith': ['fine', 'gogreen'],
-    'Gyms': ['fine', 'gogreen'],
+    'Facilities management': ['fine', 'gogreen', 'officesupply'],
+    'Faith': ['fine', 'gogreen', 'officesupply'],
+    'Gyms': ['fine', 'gogreen', 'officesupply'],
     'Land Transportation': ['fine', 'gogreen'],
-    'Spas and salons': ['fine', 'gogreen'],
-    'Hotels': ['fine', 'gogreen'],
-    'Healthcare': ['fine'],
-    'Industrial facilities': ['fine', 'gogreen']
+    'Spas and salons': ['fine', 'gogreen', 'officesupply'],
+    'Hotels': ['fine', 'gogreen', 'officesupply'],
+    'Healthcare': ['fine', 'saco'],
+    'Industrial facilities': ['fine', 'gogreen', 'officesupply'],
 }
 
 MUMZWORLD_EXCLUSIONS = [
@@ -45,6 +45,13 @@ SACO_EXCLUSIONS = [
     'waterless car wash product',
     'car surface disinfectant',
     'car gum remover',
+]
+
+OFFICE_SUPPLY_EXCLUSIONS = [
+    'wood furniture cleaner',
+    'high performance carpet shampoo',
+    'stain spot remover',
+    
 ]
 
 # USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"

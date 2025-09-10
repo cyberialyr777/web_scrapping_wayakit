@@ -13,6 +13,7 @@ from scrapers.mumzworld_scraper import MumzworldScraper
 from scrapers.saco_scraper import SacoScraper
 from scrapers.fine_scraper import FineScraper
 from scrapers.gogreen_scraper import GoGreenScraper 
+from scrapers.officesupply_scraper import OfficeSupplyScraper
 
 def main():
     try:
@@ -65,7 +66,9 @@ def main():
             'mumzworld': MumzworldScraper(driver, relevance_agent=ai_agent),
             'saco': SacoScraper(driver, relevance_agent=ai_agent),
             'fine': FineScraper(driver, relevance_agent=ai_agent),
-            'gogreen': GoGreenScraper(driver, relevance_agent=ai_agent)
+            'gogreen': GoGreenScraper(driver, relevance_agent=ai_agent),
+            'officesupply': OfficeSupplyScraper(driver, relevance_agent=ai_agent)
+
         }
         
         all_found_products = []
@@ -114,7 +117,7 @@ def main():
                 sites_to_scrape.remove('saco')
 
             for site_name in sites_to_scrape:
-                if site_name in ['fine', 'gogreen']:
+                if site_name in ['fine', 'gogreen', 'officesupply']:
                     if site_name not in site_specific_keywords:
                         print(f"   -> Saltando '{site_name}' porque no se proveyó una etiqueta específica (ej. '{site_name}:...')")
                         continue

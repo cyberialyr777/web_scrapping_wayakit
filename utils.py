@@ -56,31 +56,53 @@ def parse_saco_count_string(text_string):
 
 def parse_volume_with_multiplier(text_string):
     """
-    Parsea una cadena para extraer el volumen, manejando formatos simples (ej. "5 LTR")
-    y formatos con multiplicador (ej. "6x500ml", "6 Pcs X 3 LTR").
+    Función HÍBRIDA: Maneja los formatos de Office Supply y GoGreen.
     """
     if not text_string:
         return None
 
+    # 1. Intenta con el formato de Office Supply: (1 gallon x 4 liter)
+    office_supply_match = re.search(
+        r'\((\d+\.?\d*)\s+.*?\s*[xX]\s*(\d+\.?\d*)\s*(ltr|ml|l|liter|litre|liters|milliliters)\b.*\)',
+        text_string, re.I
+    )
+    if office_supply_match:
+        multiplier = float(office_supply_match.group(1))
+        base_quantity = float(office_supply_match.group(2))
+        unit_text = office_supply_match.group(3)
+        total_quantity = multiplier * base_quantity
+        
+        final_data = parse_volume_string(f"{total_quantity} {unit_text}")
+        if final_data:
+            final_data['quantity'] = total_quantity
+            return final_data
+
+    # 2. Si falla, intenta con el formato de GoGreen: 8PcsX2 Ltr
+    gogreen_match = re.search(r'(\d+)\s*Pcs\s*[xX]\s*(\d+\.?\d*)\s*(ltr|ml|l|liter|litre|liters|milliliters)\b', text_string, re.I)
+    if gogreen_match:
+        multiplier = float(gogreen_match.group(1))
+        base_quantity = float(gogreen_match.group(2))
+        unit_text = gogreen_match.group(3)
+        total_quantity = multiplier * base_quantity
+        
+        final_data = parse_volume_string(f"{total_quantity} {unit_text}")
+        if final_data:
+            final_data['quantity'] = total_quantity
+            return final_data
+
+    # 3. Si todo lo anterior falla, busca un multiplicador simple (ej: 8x2L) y el volumen base.
     base_volume_data = parse_volume_string(text_string)
     if not base_volume_data:
-        return None # Si no hay una unidad de volumen base (ml, L, etc.), no podemos continuar.
+        return None # No se encontró ninguna unidad de volumen.
 
     multiplier = 1
-    # Buscar patrones de multiplicador como "6x", "6 X", "6PcsX", "pack of 6"
-    multiplier_match = re.search(r'(\d+)\s*[xX]\s*|(\d+)\s*Pcs\s*[xX]\s*', text_string, re.I)
-    
-    if multiplier_match:
-        # Encontrar cuál de los grupos de captura tiene el número
-        found_multiplier = multiplier_match.group(1) or multiplier_match.group(2)
-        if found_multiplier:
-            multiplier = int(found_multiplier)
+    simple_multiplier_match = re.search(r'(\d+)\s*[xX]', text_string, re.I)
+    if simple_multiplier_match:
+        multiplier = int(simple_multiplier_match.group(1))
 
-    # Calcular la cantidad total
     total_quantity = base_volume_data['quantity'] * multiplier
     
-    return {
-        'quantity': total_quantity,
-        'unit': base_volume_data['unit'],
-        'normalized': base_volume_data['normalized'] * multiplier
-    }
+    base_volume_data['quantity'] = total_quantity
+    base_volume_data['normalized'] = base_volume_data['normalized'] * multiplier
+    
+    return base_volume_data
