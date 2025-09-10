@@ -16,13 +16,9 @@ class OfficeSupplyScraper:
         self.products_to_find_limit = 2
 
     def _log(self, msg):
-        """Función para registrar mensajes en la consola."""
         print(msg)
 
     def _extract_product_details(self, product_url, search_mode):
-        """
-        Extrae los detalles de la página de un producto individual.
-        """
         self._log(f"        -> Extrayendo detalles de: {product_url}")
         details = {
             'Product': 'Not found', 'Price_SAR': '0.00', 'Company': 'Brand not found',
@@ -44,11 +40,7 @@ class OfficeSupplyScraper:
             if name_tag:
                 product_title = name_tag.get_text(strip=True)
                 details['Product'] = product_title
-                
-                # --- INICIO DEL CAMBIO ---
-                # Log para depurar el título extraído
                 self._log(f"        -> TÍTULO EXTRAÍDO: '{product_title}'")
-                # --- FIN DEL CAMBIO ---
 
             price_tag = soup.select_one("span.ty-price-num")
             if price_tag:
@@ -67,7 +59,6 @@ class OfficeSupplyScraper:
                     details['Unit of measurement'] = parsed_data['unit']
                     self._log(f"        -> Cantidad extraída: {details['Total quantity']} {details['Unit of measurement']}")
                 else:
-                    # Log para indicar que el parseo falló
                     self._log("        -> ALERTA: La función de parseo no encontró una cantidad válida.")
 
 

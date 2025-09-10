@@ -55,13 +55,8 @@ def parse_saco_count_string(text_string):
     return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
 
 def parse_volume_with_multiplier(text_string):
-    """
-    Función HÍBRIDA: Maneja los formatos de Office Supply y GoGreen.
-    """
     if not text_string:
         return None
-
-    # 1. Intenta con el formato de Office Supply: (1 gallon x 4 liter)
     office_supply_match = re.search(
         r'\((\d+\.?\d*)\s+.*?\s*[xX]\s*(\d+\.?\d*)\s*(ltr|ml|l|liter|litre|liters|milliliters)\b.*\)',
         text_string, re.I
@@ -76,8 +71,6 @@ def parse_volume_with_multiplier(text_string):
         if final_data:
             final_data['quantity'] = total_quantity
             return final_data
-
-    # 2. Si falla, intenta con el formato de GoGreen: 8PcsX2 Ltr
     gogreen_match = re.search(r'(\d+)\s*Pcs\s*[xX]\s*(\d+\.?\d*)\s*(ltr|ml|l|liter|litre|liters|milliliters)\b', text_string, re.I)
     if gogreen_match:
         multiplier = float(gogreen_match.group(1))
@@ -89,11 +82,9 @@ def parse_volume_with_multiplier(text_string):
         if final_data:
             final_data['quantity'] = total_quantity
             return final_data
-
-    # 3. Si todo lo anterior falla, busca un multiplicador simple (ej: 8x2L) y el volumen base.
     base_volume_data = parse_volume_string(text_string)
     if not base_volume_data:
-        return None # No se encontró ninguna unidad de volumen.
+        return None 
 
     multiplier = 1
     simple_multiplier_match = re.search(r'(\d+)\s*[xX]', text_string, re.I)
