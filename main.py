@@ -14,6 +14,7 @@ from scrapers.saco_scraper import SacoScraper
 from scrapers.fine_scraper import FineScraper
 from scrapers.gogreen_scraper import GoGreenScraper 
 from scrapers.officesupply_scraper import OfficeSupplyScraper
+from scrapers.aerosense_scraper import AeroSenseScraper
 
 def main():
     try:
@@ -67,8 +68,8 @@ def main():
             'saco': SacoScraper(driver, relevance_agent=ai_agent),
             'fine': FineScraper(driver, relevance_agent=ai_agent),
             'gogreen': GoGreenScraper(driver, relevance_agent=ai_agent),
-            'officesupply': OfficeSupplyScraper(driver, relevance_agent=ai_agent)
-
+            'officesupply': OfficeSupplyScraper(driver, relevance_agent=ai_agent),
+            'aerosense': AeroSenseScraper(driver)
         }
         
         all_found_products = []
@@ -95,7 +96,11 @@ def main():
                     mod = mod.strip()
                     if ':' in mod:
                         site, keyword = mod.split(':', 1)
-                        site_specific_keywords[site.strip()] = keyword.strip()
+                        site = site.strip()
+                        keyword = keyword.strip()
+                        if site not in site_specific_keywords:
+                            site_specific_keywords[site] = []
+                        site_specific_keywords[site].append(keyword)
                     elif mod:
                         general_modifiers.append(mod)
             
@@ -117,34 +122,36 @@ def main():
                 sites_to_scrape.remove('saco')
 
             for site_name in sites_to_scrape:
-                if site_name in ['fine', 'gogreen', 'officesupply']:
-                    if site_name not in site_specific_keywords:
-                        print(f"   -> Saltando '{site_name}' porque no se proveyó una etiqueta específica (ej. '{site_name}:...')")
-                        continue
-
                 scraper = scrapers.get(site_name)
                 if scraper:
-                    keyword_to_use = site_specific_keywords.get(site_name, search_keyword)
-                    
-                    found_products = scraper.scrape(keyword_to_use, search_mode)
-                    
-                    for product in found_products:
-                        row_data = {
-                            'date': time.strftime("%Y-%m-%d"),
-                            'industry': industry_to_scrape,
-                            'subindustry': sub_industry,
-                            'type_of_product': original_type_of_product,
-                            'generic_product_type': generic_type_of_product,
-                            'product': product.get('Product'),
-                            'price_sar': product.get('Price_SAR'),
-                            'company': product.get('Company'),
-                            'source': site_name,
-                            'url': product.get('URL'),
-                            'unit_of_measurement': product.get('Unit of measurement'),
-                            'total_quantity': product.get('Total quantity')
-                        }
-                        all_found_products.append(row_data)
-                        print(f"    -> GUARDADO: {product.get('Product', 'N/A')[:60]}... (Fuente: {site_name})")
+                    keywords_to_use = site_specific_keywords.get(site_name, [search_keyword])
+
+                    for keyword_to_use in keywords_to_use:
+                        if site_name in ['fine', 'gogreen', 'officesupply', 'aerosense']:
+                             if site_name not in site_specific_keywords:
+                                print(f"   -> Saltando '{site_name}' porque no se proveyó una etiqueta específica (ej. '{site_name}:...')")
+                                continue
+                        
+                        print(f"   -> Buscando en '{site_name}' con la palabra clave: '{keyword_to_use}'")
+                        found_products = scraper.scrape(keyword_to_use, search_mode)
+                        
+                        for product in found_products:
+                            row_data = {
+                                'date': time.strftime("%Y-%m-%d"),
+                                'industry': industry_to_scrape,
+                                'subindustry': sub_industry,
+                                'type_of_product': original_type_of_product,
+                                'generic_product_type': generic_type_of_product,
+                                'product': product.get('Product'),
+                                'price_sar': product.get('Price_SAR'),
+                                'company': product.get('Company'),
+                                'source': site_name,
+                                'url': product.get('URL'),
+                                'unit_of_measurement': product.get('Unit of measurement'),
+                                'total_quantity': product.get('Total quantity')
+                            }
+                            all_found_products.append(row_data)
+                            print(f"    -> GUARDADO: {product.get('Product', 'N/A')[:60]}... (Fuente: {site_name})")
                 else:
                     print(f"   -> Advertencia: No se encontró scraper para el sitio '{site_name}'.")
 

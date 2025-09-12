@@ -10,6 +10,7 @@ TARGET_MAP = {
     'Home': ['amazon', 'mumzworld', 'saco'],
     'Automotive': ['amazon', 'saco'],
     'Pets': ['amazon'],
+    'Aviation': ['aerosense'],
     'Airports': ['fine'],
     'Restaurants': ['fine'],
     'Facilities management': ['fine', 'gogreen', 'officesupply'],
@@ -45,13 +46,6 @@ SACO_EXCLUSIONS = [
     'waterless car wash product',
     'car surface disinfectant',
     'car gum remover',
-]
-
-OFFICE_SUPPLY_EXCLUSIONS = [
-    'wood furniture cleaner',
-    'high performance carpet shampoo',
-    'stain spot remover',
-    
 ]
 
 # USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"

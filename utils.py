@@ -97,3 +97,13 @@ def parse_volume_with_multiplier(text_string):
     base_volume_data['normalized'] = base_volume_data['normalized'] * multiplier
     
     return base_volume_data
+
+def extract_aerosense_units(text):
+    match_pcs = re.search(r'\((\d+)\s*pcs\)', text)
+    if match_pcs:
+        return int(match_pcs.group(1))
+    match_pack = re.search(r'(\d+)-pack\s*x\s*(\d+)', text)
+    if match_pack:
+        return int(match_pack.group(1)) * int(match_pack.group(2))
+
+    return None
