@@ -7,14 +7,18 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, quote
 from utils import parse_volume_string, parse_count_string
+import config
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 class FineScraper:
-    def __init__(self, driver, relevance_agent):
-        self.driver = driver
+    def __init__(self, driver_path, relevance_agent):
+        self.driver_path = driver_path
         self.relevance_agent = relevance_agent
         self.base_url = "https://ksa.finestore.com/en"
-        self.products_to_find_limit = 2
+        self.products_to_find_limit = 6
 
     def _log(self, msg):
         print(msg)
@@ -118,7 +122,7 @@ class FineScraper:
             pass
         return 1
 
-    def _extract_product_details(self, product_url, search_mode):
+    def _extract_product_details(self, driver, product_url, search_mode):
         details = {
             'Product': 'Not found', 'Price_SAR': '0.00', 'Company': 'Fine',
             'URL': product_url, 'Unit of measurement': 'units', 'Total quantity': 0
@@ -127,7 +131,7 @@ class FineScraper:
         try:
             for _ in range(2):
                 try:
-                    WebDriverWait(self.driver, 8).until(
+                    WebDriverWait(driver, 8).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, "div.ecomz-product-name-style"))
                     )
                     break
@@ -136,13 +140,13 @@ class FineScraper:
                     time.sleep(0.5)
 
             try:
-                WebDriverWait(self.driver, 5).until(
+                WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div.ecomz-product-price-style"))
                 )
             except TimeoutException:
                 pass
 
-            soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
 
             details['Product'] = (
                 self._safe_get_text(soup.select_one("span.mg-l-0.f-xs-18")) or
@@ -192,18 +196,18 @@ class FineScraper:
             
         return True, "Valid"
 
-    def _navigate_to_product(self, link_element, href):
+    def _navigate_to_product(self, driver, link_element, href):
         for attempt in range(2):
             try:
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", link_element)
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", link_element)
                 time.sleep(0.4)
                 
                 try:
                     link_element.click()
                 except Exception:
-                    self.driver.execute_script("arguments[0].click();", link_element)
+                    driver.execute_script("arguments[0].click();", link_element)
                 
-                WebDriverWait(self.driver, 12).until(
+                WebDriverWait(driver, 12).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div.ecomz-product-name-style"))
                 )
                 return True
@@ -214,8 +218,8 @@ class FineScraper:
                     if href:
                         try:
                             absolute_url = urljoin(self.base_url, href)
-                            self.driver.get(absolute_url)
-                            WebDriverWait(self.driver, 12).until(
+                            driver.get(absolute_url)
+                            WebDriverWait(driver, 12).until(
                                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.ecomz-product-name-style"))
                             )
                             return True
@@ -230,6 +234,23 @@ class FineScraper:
         search_url = f"{self.base_url}/products?keyword={quote(keyword)}"
         all_found_products = []
         page_num = 1
+
+        service = ChromeService(executable_path=self.driver_path)
+        options = webdriver.ChromeOptions()
+        options.add_experimental_option('excludeSwitches', ['enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_argument('--disable-notifications')
+        options.add_argument('--headless')
+        options.add_argument('--disable-gpu')
+        options.add_argument(f"user-agent={config.USER_AGENT}")
+        options.add_argument('--log-level=3')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-extensions ')
+        options.add_argument('--disable-browser-side-navigation')
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        
+        self.driver = webdriver.Chrome(service=service, options=options)
 
         try:
             self.driver.get(search_url)
@@ -268,13 +289,13 @@ class FineScraper:
                         link_element = fresh_links[i]
                         href = link_element.get_attribute('href')
 
-                        if not self._navigate_to_product(link_element, href):
+                        if not self._navigate_to_product(self.driver, link_element, href):
                             self._log(f"      -> Could not navigate to product")
                             continue
 
                         self._close_modal()
                         product_url = self.driver.current_url
-                        product_details = self._extract_product_details(product_url, search_mode)
+                        product_details = self._extract_product_details(self.driver, product_url, search_mode)
                         
                         self._log(f"      -> Extracted: {product_details['Product'][:50]}... | Price: {product_details['Price_SAR']} | Qty: {product_details['Total quantity']}")
 
@@ -314,5 +335,8 @@ class FineScraper:
             except Exception as e:
                 self._log(f"    ! Unexpected error: {e}")
                 break
+        
+        if self.driver:
+            self.driver.quit()
 
         return all_found_products

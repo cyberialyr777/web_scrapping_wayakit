@@ -32,16 +32,23 @@ def parse_count_string(text_string):
     if not text_string:
         return None
 
-    match = re.search(r'(\d+)(?:\s+\w+){0,2}\s*(wipes|count|sheets|sachets|pack|pcs|pieces|pc)\b|\b(wipes|count|sheets|sachets|pack|pcs|pieces|pc)(?:\s+\w+){0,2}\s*(\d+)', text_string, re.I)
-    if not match:
-        return None
-    if match.group(1) and match.group(2):
-        quantity = int(match.group(1))
-    elif match.group(3) and match.group(4):
-        quantity = int(match.group(4))
-    else:
-        return None
-    return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
+    patterns = [
+        r'(\d+)\s*/\s*(box|pack|count)\b',
+        r'(\d+)\s*(?:wet\s*)?(wipes|count|sheets|sachets|pack|pcs|pieces|pc)\b',
+        r'\b(pack|box)\s*of\s*(\d+)',
+        r'^(\d+)\s*(?:sanitizing\s*)?(wipes|count|sheets|sachets|pack|pcs|pieces|pc)\b'
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, text_string, re.I)
+        if match:
+            # Different patterns might have the number in group 1 or 2
+            quantity_str = match.group(1) if match.group(1) and match.group(1).isdigit() else (match.group(2) if len(match.groups()) > 1 and match.group(2) and match.group(2).isdigit() else None)
+            if quantity_str:
+                quantity = int(quantity_str)
+                return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
+    
+    return None
 
 def parse_saco_count_string(text_string):
     if not text_string:

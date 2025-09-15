@@ -5,10 +5,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, quote
 from utils import parse_volume_string
+import config
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 class MumzworldScraper:
-    def __init__(self, driver, relevance_agent):
-        self.driver = driver
+    def __init__(self, driver_path, relevance_agent):
+        self.driver_path = driver_path
         self.relevance_agent = relevance_agent 
         self.base_url = "https://www.mumzworld.com/sa-en/"
 
@@ -27,15 +31,15 @@ class MumzworldScraper:
         quantity = int(match.group(1))
         return {'quantity': quantity, 'unit': 'units', 'normalized': quantity}
 
-    def _extract_product_details(self, product_url, search_mode):
+    def _extract_product_details(self, driver, product_url, search_mode):
         details = {
             'Product': 'Not found', 'Price_SAR': '0.00', 'Company': 'Not found',
             'URL': product_url, 'Unit of measurement': 'units', 'Total quantity': 0
         }
         try:
-            self.driver.get(product_url)
-            WebDriverWait(self.driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "h1.ProductDetails_productName__lcVK_")))
-            soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+            driver.get(product_url)
+            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "h1.ProductDetails_productName__lcVK_")))
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
 
             product_name_tag = soup.find('h1', class_='ProductDetails_productName__lcVK_')
             product_name = self._safe_get_text(product_name_tag)
@@ -67,15 +71,32 @@ class MumzworldScraper:
         self._log(f"  [Mumzworld Scraper] Searching: '{keyword}' (Mode: {search_mode})")
         search_url = f"{self.base_url}search?q={quote(keyword)}"
         valid_products_found = []
-        products_to_find = 2
+        products_to_find = 11
+
+        service = ChromeService(executable_path=self.driver_path)
+        options = webdriver.ChromeOptions()
+        options.add_experimental_option('excludeSwitches', ['enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_argument('--disable-notifications')
+        options.add_argument('--headless')
+        options.add_argument('--disable-gpu')
+        options.add_argument(f"user-agent={config.USER_AGENT}")
+        options.add_argument('--log-level=3')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-extensions ')
+        options.add_argument('--disable-browser-side-navigation')
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        
+        driver = webdriver.Chrome(service=service, options=options)
 
         try:
             self._log(f"    > Navigating to: {search_url}")
-            self.driver.get(search_url)
-            WebDriverWait(self.driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.ProductCard_productCard__kFgss")))
+            driver.get(search_url)
+            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.ProductCard_productCard__kFgss")))
             self._log("    > Search results page loaded. Analyzing products...")
 
-            soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
             product_containers = soup.select("div.ProductCard_productCard__kFgss")
 
             if not product_containers:
@@ -91,7 +112,7 @@ class MumzworldScraper:
                 if link_tag and link_tag.has_attr('href'):
                     product_url = urljoin(self.base_url, link_tag['href'])
                     self._log(f"      -> Visiting: {product_url[:80]}...")
-                    product_details = self._extract_product_details(product_url, search_mode)
+                    product_details = self._extract_product_details(driver, product_url, search_mode)
 
                     if product_details.get('Total quantity', 0) > 0:
                         is_relevant = self.relevance_agent.is_relevant(product_details.get('Product'), keyword)
@@ -105,5 +126,8 @@ class MumzworldScraper:
                         self._log(f"      -> DISCARDED (no quantity): {product_details['Product'][:60]}...")
         except Exception as e:
             self._log(f"    ! Unexpected error occurred in Mumzworld scraper: {e}")
+        finally:
+            if driver:
+                driver.quit()
 
         return valid_products_found

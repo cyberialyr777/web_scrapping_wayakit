@@ -5,10 +5,14 @@ from bs4 import BeautifulSoup
 import re
 import time
 from utils import extract_aerosense_units 
+import config
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 class AeroSenseScraper:
-    def __init__(self, driver):
-        self.driver = driver
+    def __init__(self, driver_path):
+        self.driver_path = driver_path
         self.base_url = "https://www.aero-sense.com/en/online-shop/cabin-and-exterior-cleaning"
 
     def _parse_package_info(self, package_text):
@@ -34,16 +38,33 @@ class AeroSenseScraper:
         product_url = f"{self.base_url}/{product_slug}"
         
         print(f"Navigating directly to AeroSense product page: {product_url}")
-        self.driver.get(product_url)
+        
+        service = ChromeService(executable_path=self.driver_path)
+        options = webdriver.ChromeOptions()
+        options.add_experimental_option('excludeSwitches', ['enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_argument('--disable-notifications')
+        options.add_argument('--headless')
+        options.add_argument('--disable-gpu')
+        options.add_argument(f"user-agent={config.USER_AGENT}")
+        options.add_argument('--log-level=3')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-extensions ')
+        options.add_argument('--disable-browser-side-navigation')
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        
+        driver = webdriver.Chrome(service=service, options=options)
         
         products_found = []
         
         try:
-            WebDriverWait(self.driver, 20).until(
+            driver.get(product_url)
+            WebDriverWait(driver, 20).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "h1 div.field--name-title"))
             )
             
-            soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
 
             product_name_tag = soup.select_one('h1 div.field--name-title')
             product_name = product_name_tag.text.strip() if product_name_tag else "Unknown Product"
@@ -73,7 +94,7 @@ class AeroSenseScraper:
                     total_quantity = extract_aerosense_units(package_info)
                     unit_of_measurement = 'units'
                     print(f"  - Found variation: {product_name} | {package_info} | Price: {price_sar:.2f} SAR | Units: {total_quantity}")
-                else: # mode == 'volume'
+                else:
                     total_quantity = self._parse_package_info(package_info)
                     unit_of_measurement = 'ml'
                     print(f"  - Found variation: {product_name} | {package_info} | Price: {price_sar:.2f} SAR | Volume: {total_quantity}ml")
@@ -91,6 +112,9 @@ class AeroSenseScraper:
 
         except Exception as e:
             print(f"An error occurred while scraping {product_url}: {e}")
+        finally:
+            if driver:
+                driver.quit()
         
         return products_found
 

@@ -1,5 +1,5 @@
 INSTRUCTIONS_FILE = 'analysis - copia1.csv'
-OUTPUT_CSV_FILE = 'fine_gogreen_test1.csv'
+OUTPUT_CSV_FILE = 'correct_unit.csv'
 CSV_COLUMNS = [
     'date', 'industry', 'subindustry', 'type_of_product', 'generic_product_type',
     'product', 'price_sar', 'company', 'source', 'url',
@@ -46,6 +46,7 @@ SACO_EXCLUSIONS = [
     'waterless car wash product',
     'car surface disinfectant',
     'car gum remover',
+    'broad-spectrum disinfectant for surfaces, mattress and touchpoints'
 ]
 
 # USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
